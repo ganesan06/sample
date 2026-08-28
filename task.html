@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Details</title>
+
+```
+<!-- Connect CSS -->
+<link rel="stylesheet" href="style.css">
+```
+
+</head>
+
+<body>
+
+```
+<header class="header">
+    <div>
+        <h1>Task Details</h1>
+        <p>View selected task information</p>
+    </div>
+
+    <a href="index.html" class="back-button">← Back</a>
+</header>
+
+
+<main class="details-container">
+
+    <div class="details-card">
+
+        <h2 id="taskName">Loading...</h2>
+
+        <div class="detail-row">
+            <span>Task ID</span>
+            <strong id="taskId">-</strong>
+        </div>
+
+        <div class="detail-row">
+            <span>Status</span>
+            <strong id="taskStatus">-</strong>
+        </div>
+
+        <button class="back-main-btn" onclick="goBack()">
+            Back to Task Manager
+        </button>
+
+    </div>
+
+</main>
+
+
+<script>
+    // Get task ID from URL
+    const parameters = new URLSearchParams(window.location.search);
+    const taskId = Number(parameters.get("id"));
+
+    // Get tasks from browser storage
+    const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+    // Find the selected task
+    const selectedTask = tasks.find(function(task) {
+        return task.id === taskId;
+    });
+
+    // Show task details
+    if (selectedTask) {
+        document.getElementById("taskName").textContent = selectedTask.title;
+        document.getElementById("taskId").textContent = selectedTask.id;
+        document.getElementById("taskStatus").textContent =
+            selectedTask.status.toUpperCase();
+    } else {
+        document.getElementById("taskName").textContent = "Task Not Found";
+    }
+
+    function goBack() {
+        window.location.href = "index.html";
+    }
+</script>
+```
+
+</body>
+</html>
