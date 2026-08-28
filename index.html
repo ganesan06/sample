@@ -1,100 +1,165 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task Manager</title>
-
-```
-<!-- Connect CSS -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Manager QA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
-```
-
 </head>
-
 <body>
 
-```
-<!-- HEADER -->
-<header class="header">
-    <div>
-        <h1>✓ TASK MANAGER</h1>
-        <p>Simple Task Management System</p>
+<div class="topbar">
+    <div class="brand"><span class=""></span>TASK MANAGER</div>
+    <div class="icon-bar">
+      <button class="icon-btn" id="homeBtn" title="Home">
+         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:21px; height:21px;">
+    <path d="M3 11l9-8 9 8"/>
+    <path d="M5 10v10h14V10"/>
+    <path d="M9 20v-6h6v6"/>
+  </svg>
+</button>
+      <button class="icon-btn" id="eyeBtn" title="Hidden tasks">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span class="badge-count hidden" id="hiddenBadgeCount">0</span>
+      </button>
+      <div class="ist-clock">
+        <span class="ist-time" id="istTime">00:00:00</span>
+        <span class="ist-label">IST</span>
+      </div>
+      <button class="icon-btn" id="reportBtn" title="Reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </button>
+      <button class="icon-btn" id="settingsBtn" title="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="board" id="board">
+  <div class="empty-hint" style="grid-column: 1 / -1; padding: 40px 0;">Loading board…</div>
+</div>
+
+<div class="detail-view hidden" id="detailView">
+  <div class="detail-subheader">
+    <button class="detail-back" id="detailBackBtn">&larr; Back to board</button>
+    <span class="detail-field-label">Task name :</span>
+    <span class="detail-field-value" id="detailTaskName">&nbsp;</span>
+    <span class="detail-field-label">Task ID :</span>
+    <span class="detail-field-value" id="detailTaskId">&nbsp;</span>
+    <div class="status-dots">
+      <span class="sdot filled-black"></span>
+      <span class="sdot outline sicon">&#10073;&#10073;</span>
+      <span class="sdot filled-black" style="background:transparent; color:var(--red);"><span class="sicon">&#9724;</span></span>
+      <span class="sdot filled-black"></span>
+      <span class="status-timer-pill" id="detailTimerPill">00:00:00</span>
+    </div>
+  </div>
+
+  <div class="detail-body">
+    <div class="subtask-sidebar" id="subtaskSidebar"></div>
+
+    <div class="tool-rail">
+      <button class="tool-btn" id="toolLine" data-tool="line">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="20" x2="20" y2="4"/></svg>
+        Line
+      </button>
+      <button class="tool-btn" id="toolDelete" data-tool="delete">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        Delete
+      </button>
+      <button class="tool-btn" id="toolRedo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7L21 13"/></svg>
+        Redo
+      </button>
+      <button class="tool-btn" id="toolUndo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>
+        Undo
+      </button>
     </div>
 
-    <button class="clear-all-btn" onclick="clearAllTasks()">
-        Clear All
-    </button>
-</header>
+    <div class="canvas-area">
+      <canvas id="taskCanvas"></canvas>
+    </div>
 
+    <div class="detail-right-panel" id="detailRightPanel">
+      <span class="panel-toggle" id="panelToggleIcon">&#9655;</span>
+    </div>
+  </div>
+</div>
 
-<!-- ADD TASK -->
-<section class="add-task-section">
+<div class="modal-overlay hidden" id="addSubtaskModal">
+  <div class="modal-box">
+    <p class="modal-title">Add subtask</p>
+    <div class="modal-body">
+      <label class="field-label" for="addSubtaskTitleInput">Subtask Title</label>
+      <input type="text" class="field-input" id="addSubtaskTitleInput" placeholder="e.g. 1.4" />
+      <label class="field-label" for="addSubtaskIdInput">Subtask ID</label>
+      <input type="text" class="field-input mono" id="addSubtaskIdInput" placeholder="e.g. 1.4" />
+      <p class="field-error" id="addSubtaskError"></p>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="addSubtaskModalCancel">Cancel</button>
+      <button class="modal-confirm" id="addSubtaskModalConfirm" style="background:var(--blue);">Add</button>
+    </div>
+  </div>
+</div>
 
-    <input
-        type="text"
-        id="taskTitle"
-        placeholder="Enter task name..."
-    >
+<div class="modal-overlay hidden" id="addGroupModal">
+  <div class="modal-box">
+    <p class="modal-title">Add subtask group</p>
+    <div class="modal-body">
+      <label class="field-label" for="addGroupNameInput">Group Name</label>
+      <input type="text" class="field-input" id="addGroupNameInput" placeholder="e.g. Subtask 3" />
+      <p class="field-error" id="addGroupError"></p>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="addGroupModalCancel">Cancel</button>
+      <button class="modal-confirm" id="addGroupModalConfirm" style="background:var(--blue);">Add</button>
+    </div>
+  </div>
+</div>
 
-    <button onclick="addTask()">+ Add Task</button>
+<div class="modal-overlay hidden" id="addTaskModal">
+  <div class="modal-box">
+    <p class="modal-title">Add task</p>
+    <div class="modal-body">
+      <label class="field-label" for="addTaskTitleInput">Task Title</label>
+      <input type="text" class="field-input" id="addTaskTitleInput" placeholder="e.g. Task 11" />
+      <label class="field-label" for="addTaskIdInput">Task ID</label>
+      <input type="number" class="field-input mono" id="addTaskIdInput" placeholder="e.g. 11" />
+      <p class="field-error" id="addTaskError"></p>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="addTaskModalCancel">Cancel</button>
+      <button class="modal-confirm" id="addTaskModalConfirm" style="background:var(--blue);">Add</button>
+    </div>
+  </div>
+</div>
 
-</section>
+<div class="modal-overlay hidden" id="hiddenModal">
+  <div class="modal-box">
+    <p class="modal-title">Hidden tasks</p>
+    <div class="hidden-list" id="hiddenList"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="hiddenModalClose">Close</button>
+    </div>
+  </div>
+</div>
 
+<div class="modal-overlay hidden" id="confirmModal">
+  <div class="modal-box">
+    <p class="modal-title">Delete card</p>
+    <p class="modal-body">Do you want to delete <strong id="confirmModalTitle"></strong>? This can't be undone.</p>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="confirmModalCancel">Cancel</button>
+      <button class="modal-confirm" id="confirmModalConfirm">Delete</button>
+    </div>
+  </div>
+</div>
 
-<!-- TASK BOARD -->
-<main class="board">
-
-    <!-- BACKLOG -->
-    <section class="column">
-        <div class="column-header backlog-header">
-            <h2>Backlog</h2>
-            <span id="backlogCount">0</span>
-        </div>
-
-        <div id="backlog" class="task-list"></div>
-    </section>
-
-
-    <!-- ASSIGNED -->
-    <section class="column">
-        <div class="column-header assigned-header">
-            <h2>Assigned</h2>
-            <span id="assignedCount">0</span>
-        </div>
-
-        <div id="assigned" class="task-list"></div>
-    </section>
-
-
-    <!-- CHECKOUT -->
-    <section class="column">
-        <div class="column-header checkout-header">
-            <h2>Checkout</h2>
-            <span id="checkoutCount">0</span>
-        </div>
-
-        <div id="checkout" class="task-list"></div>
-    </section>
-
-
-    <!-- COMPLETED -->
-    <section class="column">
-        <div class="column-header completed-header">
-            <h2>Completed</h2>
-            <span id="completedCount">0</span>
-        </div>
-
-        <div id="completed" class="task-list"></div>
-    </section>
-
-</main>
-
-
-<!-- Connect JavaScript -->
 <script src="script.js"></script>
-```
-
 </body>
 </html>
