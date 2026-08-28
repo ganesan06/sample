@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+
+```
+<!-- Connect CSS -->
+<link rel="stylesheet" href="style.css">
+```
+
+</head>
+
+<body>
+
+```
+<!-- HEADER -->
+<header class="header">
+    <div>
+        <h1>✓ TASK MANAGER</h1>
+        <p>Simple Task Management System</p>
+    </div>
+
+    <button class="clear-all-btn" onclick="clearAllTasks()">
+        Clear All
+    </button>
+</header>
+
+
+<!-- ADD TASK -->
+<section class="add-task-section">
+
+    <input
+        type="text"
+        id="taskTitle"
+        placeholder="Enter task name..."
+    >
+
+    <button onclick="addTask()">+ Add Task</button>
+
+</section>
+
+
+<!-- TASK BOARD -->
+<main class="board">
+
+    <!-- BACKLOG -->
+    <section class="column">
+        <div class="column-header backlog-header">
+            <h2>Backlog</h2>
+            <span id="backlogCount">0</span>
+        </div>
+
+        <div id="backlog" class="task-list"></div>
+    </section>
+
+
+    <!-- ASSIGNED -->
+    <section class="column">
+        <div class="column-header assigned-header">
+            <h2>Assigned</h2>
+            <span id="assignedCount">0</span>
+        </div>
+
+        <div id="assigned" class="task-list"></div>
+    </section>
+
+
+    <!-- CHECKOUT -->
+    <section class="column">
+        <div class="column-header checkout-header">
+            <h2>Checkout</h2>
+            <span id="checkoutCount">0</span>
+        </div>
+
+        <div id="checkout" class="task-list"></div>
+    </section>
+
+
+    <!-- COMPLETED -->
+    <section class="column">
+        <div class="column-header completed-header">
+            <h2>Completed</h2>
+            <span id="completedCount">0</span>
+        </div>
+
+        <div id="completed" class="task-list"></div>
+    </section>
+
+</main>
+
+
+<!-- Connect JavaScript -->
+<script src="script.js"></script>
+```
+
+</body>
+</html>
