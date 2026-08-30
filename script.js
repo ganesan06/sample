@@ -1318,10 +1318,112 @@ const settingsModal = document.getElementById('settingsModal');
 const settingsModalClose = document.getElementById('settingsModalClose');
 
 sidebarAddTaskBtn.addEventListener('click', () => openAddTaskModal());
-sidebarSettingBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
+sidebarSettingBtn.addEventListener('click', () => {
+  refreshAccountView();
+  settingsModal.classList.remove('hidden');
+});
 settingsModalClose.addEventListener('click', () => settingsModal.classList.add('hidden'));
 settingsModal.addEventListener('click', e => {
   if(e.target === settingsModal) settingsModal.classList.add('hidden');
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !settingsModal.classList.contains('hidden')) settingsModal.classList.add('hidden');
+});
+
+/* ---- Account: login / logout / details ---- */
+const ACCOUNT_STORAGE_KEY = 'account-details';
+const LOGIN_STORAGE_KEY = 'account-logged-in';
+
+const accountLoggedOutView = document.getElementById('accountLoggedOutView');
+const accountLoggedInView = document.getElementById('accountLoggedInView');
+const loginEmailInput = document.getElementById('loginEmailInput');
+const loginPasswordInput = document.getElementById('loginPasswordInput');
+const loginError = document.getElementById('loginError');
+const loginBtn = document.getElementById('loginBtn');
+const accountNameInput = document.getElementById('accountNameInput');
+const accountEmailInput = document.getElementById('accountEmailInput');
+const accountSavedNotice = document.getElementById('accountSavedNotice');
+const saveAccountBtn = document.getElementById('saveAccountBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+
+let accountDetails = { name: '', email: '' };
+let isLoggedIn = false;
+
+async function loadAccount(){
+  try{
+    const raw = await storageGet(ACCOUNT_STORAGE_KEY);
+    if(raw) accountDetails = JSON.parse(raw);
+  }catch(e){ /* ignore malformed data */ }
+  const loggedRaw = await storageGet(LOGIN_STORAGE_KEY);
+  isLoggedIn = loggedRaw === 'true';
+}
+
+async function saveAccount(){
+  await storageSet(ACCOUNT_STORAGE_KEY, JSON.stringify(accountDetails));
+}
+
+function refreshAccountView(){
+  accountLoggedOutView.classList.toggle('hidden', isLoggedIn);
+  accountLoggedInView.classList.toggle('hidden', !isLoggedIn);
+  if(isLoggedIn){
+    accountNameInput.value = accountDetails.name || '';
+    accountEmailInput.value = accountDetails.email || '';
+  } else {
+    loginEmailInput.value = accountDetails.email || '';
+    loginPasswordInput.value = '';
+    loginError.classList.remove('show');
+  }
+  accountSavedNotice.classList.remove('show');
+}
+
+loginBtn.addEventListener('click', async () => {
+  const email = loginEmailInput.value.trim();
+  const password = loginPasswordInput.value;
+  if(!email || !password){
+    loginError.textContent = 'Enter both email and password.';
+    loginError.classList.add('show');
+    return;
+  }
+  loginError.classList.remove('show');
+  accountDetails.email = email;
+  isLoggedIn = true;
+  await saveAccount();
+  await storageSet(LOGIN_STORAGE_KEY, 'true');
+  refreshAccountView();
+});
+
+saveAccountBtn.addEventListener('click', async () => {
+  accountDetails.name = accountNameInput.value.trim();
+  accountDetails.email = accountEmailInput.value.trim();
+  await saveAccount();
+  accountSavedNotice.classList.add('show');
+  setTimeout(() => accountSavedNotice.classList.remove('show'), 1800);
+});
+
+logoutBtn.addEventListener('click', async () => {
+  isLoggedIn = false;
+  await storageSet(LOGIN_STORAGE_KEY, 'false');
+  refreshAccountView();
+});
+
+/* ---- Theme: light / dark ---- */
+const THEME_STORAGE_KEY = 'theme-mode';
+const themeSwitchTrack = document.getElementById('themeSwitchTrack');
+const themeLabelLight = document.getElementById('themeLabelLight');
+const themeLabelDark = document.getElementById('themeLabelDark');
+
+function applyTheme(theme){
+  const dark = theme === 'dark';
+  document.body.classList.toggle('dark-theme', dark);
+  themeSwitchTrack.classList.toggle('is-dark', dark);
+  themeLabelLight.classList.toggle('active', !dark);
+  themeLabelDark.classList.toggle('active', dark);
+}
+
+themeSwitchTrack.addEventListener('click', async () => {
+  const dark = !document.body.classList.contains('dark-theme');
+  applyTheme(dark ? 'dark' : 'light');
+  await storageSet(THEME_STORAGE_KEY, dark ? 'dark' : 'light');
 });
 
 async function setUserRole(role){
@@ -1343,6 +1445,11 @@ async function init(){
   const savedRole = await storageGet(ROLE_STORAGE_KEY);
   userRole = (savedRole === 'user' || savedRole === 'super') ? savedRole : 'super';
   updateRoleButtons();
+
+  const savedTheme = await storageGet(THEME_STORAGE_KEY);
+  applyTheme(savedTheme === 'dark' ? 'dark' : 'light');
+
+  await loadAccount();
 
   render();
   setInterval(tick, 1000);

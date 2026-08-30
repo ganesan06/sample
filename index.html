@@ -222,9 +222,43 @@
 </div>
 
 <div class="modal-overlay hidden" id="settingsModal">
-  <div class="modal-box">
+  <div class="modal-box modal-box-lg">
     <p class="modal-title">Settings</p>
-    <p class="modal-body">Settings panel coming soon.</p>
+    <div class="modal-scroll-body">
+
+      <p class="report-section-title">Account</p>
+
+      <div id="accountLoggedOutView">
+        <label class="field-label" for="loginEmailInput">Email</label>
+        <input type="email" class="field-input" id="loginEmailInput" placeholder="you@example.com" />
+        <label class="field-label" for="loginPasswordInput">Password</label>
+        <input type="password" class="field-input" id="loginPasswordInput" placeholder="••••••••" />
+        <p class="field-error" id="loginError"></p>
+        <button class="modal-confirm" id="loginBtn" style="background:var(--blue); width:100%;">Log in</button>
+      </div>
+
+      <div class="hidden" id="accountLoggedInView">
+        <label class="field-label" for="accountNameInput">Name</label>
+        <input type="text" class="field-input" id="accountNameInput" placeholder="Your name" />
+        <label class="field-label" for="accountEmailInput">Email</label>
+        <input type="email" class="field-input" id="accountEmailInput" placeholder="you@example.com" />
+        <p class="field-success" id="accountSavedNotice">Saved.</p>
+        <div class="account-btn-row">
+          <button class="modal-confirm" id="saveAccountBtn" style="background:var(--blue);">Save details</button>
+          <button class="modal-cancel" id="logoutBtn">Log out</button>
+        </div>
+      </div>
+
+      <p class="report-section-title">Appearance</p>
+      <div class="theme-switch-row">
+        <span class="theme-switch-label" id="themeLabelLight">Light</span>
+        <button class="theme-switch-track" id="themeSwitchTrack" role="switch" aria-label="Toggle dark theme">
+          <span class="theme-switch-thumb"></span>
+        </button>
+        <span class="theme-switch-label" id="themeLabelDark">Dark</span>
+      </div>
+
+    </div>
     <div class="modal-actions">
       <button class="modal-cancel" id="settingsModalClose">Close</button>
     </div>

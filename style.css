@@ -19,6 +19,17 @@
     --green-ink: #0B3A1B;
   }
 
+  body.dark-theme{
+    --bg: #14171C;
+    --panel: #1C2029;
+    --card: #232733;
+    --card-body: #2A2F3B;
+    --ink: #F1F1EC;
+    --ink-soft: #A5A9B2;
+    --line: #333846;
+  }
+  body{ transition:background 0.15s ease, color 0.15s ease; }
+
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
@@ -170,6 +181,33 @@
     transition:left 0.15s ease;
   }
   .role-switch-track.is-admin .role-switch-thumb{ left:24px; }
+
+  .theme-switch-row{ display:flex; align-items:center; gap:10px; margin:4px 0 6px; }
+  .theme-switch-label{ font-size:13px; font-weight:600; color:var(--ink-soft); }
+  .theme-switch-label.active{ color:var(--ink); }
+  .theme-switch-track{
+    position:relative;
+    width:46px; height:24px;
+    border-radius:14px;
+    border:1.5px solid var(--line);
+    background:var(--panel);
+    cursor:pointer;
+    flex-shrink:0;
+    padding:0;
+  }
+  .theme-switch-thumb{
+    position:absolute;
+    top:2px; left:2px;
+    width:16px; height:16px;
+    border-radius:50%;
+    background:var(--ink-soft);
+    transition:left 0.15s ease, background 0.15s ease;
+  }
+  .theme-switch-track.is-dark{ background:var(--ink); border-color:var(--ink); }
+  .theme-switch-track.is-dark .theme-switch-thumb{ left:24px; background:var(--card); }
+
+  .account-btn-row{ display:flex; gap:10px; margin-top:6px; }
+  .account-btn-row .modal-confirm, .account-btn-row .modal-cancel{ flex:1; }
   @media (max-width:1000px){
     .board-sidebar{width:170px;}
   }
@@ -471,7 +509,8 @@
     padding:8px 10px;
     font-family:'Inter',sans-serif;
     font-size:13px;
-    background:#fff;
+    background:var(--card);
+    color:var(--ink);
     outline:none;
     margin-bottom:14px;
   }
@@ -484,6 +523,13 @@
     display:none;
   }
   .field-error.show{ display:block; }
+  .field-success{
+    color:var(--green);
+    font-size:12px;
+    margin:-8px 0 4px;
+    display:none;
+  }
+  .field-success.show{ display:block; }
 
   .empty-hint{
     text-align:center;
@@ -505,7 +551,8 @@
   }
   .modal-overlay.hidden{ display:none; }
   .modal-box{
-    background:#fff;
+    background:var(--card);
+    color:var(--ink);
     border-radius:14px;
     padding:22px 22px 18px;
     width:min(320px, 90vw);
@@ -555,6 +602,8 @@
     padding:7px 9px;
     font-family:'JetBrains Mono',monospace;
     font-size:13px;
+    background:var(--card);
+    color:var(--ink);
   }
   .add-shift-btn{
     border:none;
@@ -641,7 +690,7 @@
     height:calc(100vh - 58px);
   }
   .detail-subheader{
-    background:#E4E2D8;
+    background:var(--panel);
     border-bottom:1px solid var(--line);
     padding:12px 20px;
     display:flex;
@@ -655,7 +704,7 @@
     justify-content:center;
     gap:10px;
     padding:8px 20px;
-    background:#F1EFE6;
+    background:var(--bg);
     border-bottom:1px solid var(--line);
     font-size:13px;
   }
@@ -665,7 +714,7 @@
     font-weight:700;
     font-size:14px;
     padding:4px 10px;
-    background:#fff;
+    background:var(--card);
     border:1px solid var(--line);
     border-radius:6px;
     min-width:92px;
@@ -673,7 +722,7 @@
   }
   .measure-btn{
     border:1px solid var(--line);
-    background:#fff;
+    background:var(--card);
     border-radius:6px;
     padding:6px 12px;
     font-size:12px;
@@ -824,7 +873,7 @@
     cursor:pointer;
   }
   .tool-btn:hover{ background:var(--card-body); }
-  .tool-btn.active{ background:#fff; border:2px solid var(--blue); border-radius:6px; margin:2px; }
+  .tool-btn.active{ background:var(--card); border:2px solid var(--blue); border-radius:6px; margin:2px; }
   .tool-btn svg{ width:18px; height:18px; }
 
   .canvas-area{
