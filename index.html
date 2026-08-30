@@ -12,50 +12,25 @@
 
 <div class="topbar">
     <div class="brand" id="brandLogo" title="Go to board"><span class=""></span>TASK MANAGER</div>
-    <div class="icon-bar">
-      <div class="role-toggle" id="roleToggle">
-        <button class="role-locked-btn" id="roleLockedBtn">Admin</button>
-        <div class="role-options hidden" id="roleOptions">
-          <button class="role-btn" id="roleSuperBtn" data-role="super">Admin</button>
-          <button class="role-btn" id="roleUserBtn" data-role="user">User</button>
-        </div>
-      </div>
-      <button class="icon-btn" id="homeBtn" title="Home">
-         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:21px; height:21px;">
-    <path d="M3 11l9-8 9 8"/>
-    <path d="M5 10v10h14V10"/>
-    <path d="M9 20v-6h6v6"/>
-  </svg>
-</button>
-      <button class="icon-btn" id="eyeBtn" title="Hidden tasks">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-        <span class="badge-count hidden" id="hiddenBadgeCount">0</span>
-      </button>
-      <div class="ist-clock">
-        <span class="ist-time" id="istTime">00:00:00</span>
-        <span class="ist-label">IST</span>
-      </div>
-      <button class="icon-btn" id="reportBtn" title="Reports">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      </button>
-      <button class="icon-btn" id="settingsBtn" title="Settings">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </button>
-      <button class="icon-btn" id="trashBtn" title="Deleted tasks">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-        <span class="badge-count hidden" id="trashBadgeCount">0</span>
-      </button>
+    <div class="ist-clock">
+      <span class="ist-time" id="istTime">00:00:00</span>
+      <span class="ist-label">IST</span>
     </div>
-  </div>
 </div>
 
 <div class="board-layout" id="boardLayout">
   <aside class="board-sidebar" id="boardSidebar">
-    <button class="sidebar-btn" id="sidebarAdminBtn">Admin</button>
+    <div class="role-switch">
+      <span class="role-switch-label" id="roleSwitchLabelUser">User</span>
+      <button class="role-switch-track" id="roleSwitchTrack" role="switch" aria-label="Toggle Admin mode">
+        <span class="role-switch-thumb"></span>
+      </button>
+      <span class="role-switch-label" id="roleSwitchLabelAdmin">Admin</span>
+    </div>
     <button class="sidebar-btn" id="sidebarAddTaskBtn">Add task</button>
     <button class="sidebar-btn" id="sidebarReportBtn">Report</button>
-    <button class="sidebar-btn" id="sidebarDeleteBtn">Delete</button>
-    <button class="sidebar-btn" id="sidebarHideBtn">Hide</button>
+    <button class="sidebar-btn" id="sidebarDeleteBtn">Delete<span class="sidebar-badge hidden" id="trashBadgeCount">0</span></button>
+    <button class="sidebar-btn" id="sidebarHideBtn">Hide<span class="sidebar-badge hidden" id="hiddenBadgeCount">0</span></button>
     <div class="sidebar-spacer"></div>
     <button class="sidebar-btn" id="sidebarSettingBtn">Setting</button>
   </aside>

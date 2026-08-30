@@ -371,7 +371,7 @@ function updateIstClock(){
 const hiddenModal = document.getElementById('hiddenModal');
 const hiddenList = document.getElementById('hiddenList');
 const hiddenBadgeCount = document.getElementById('hiddenBadgeCount');
-const eyeBtn = document.getElementById('eyeBtn');
+const sidebarHideBtn = document.getElementById('sidebarHideBtn');
 const colLabelById = Object.fromEntries(COLUMNS.map(c => [c.id, c.label]));
 
 function updateHiddenBadge(){
@@ -410,12 +410,11 @@ function renderHiddenList(){
   });
 }
 
-eyeBtn.addEventListener('click', () => {
+sidebarHideBtn.addEventListener('click', () => {
   renderHiddenList();
   hiddenModal.classList.remove('hidden');
 });
 
-const homeBtn = document.getElementById('homeBtn');
 const brandLogo = document.getElementById('brandLogo');
 function goToBoard(){
   if(currentDetailTaskId !== null){
@@ -426,7 +425,6 @@ function goToBoard(){
     render();
   }
 }
-homeBtn.addEventListener('click', goToBoard);
 brandLogo.addEventListener('click', goToBoard);
 
 document.getElementById('hiddenModalClose').addEventListener('click', () => {
@@ -444,7 +442,7 @@ document.addEventListener('keydown', e => {
 const trashModal = document.getElementById('trashModal');
 const trashList = document.getElementById('trashList');
 const trashBadgeCount = document.getElementById('trashBadgeCount');
-const trashBtn = document.getElementById('trashBtn');
+const sidebarDeleteBtn = document.getElementById('sidebarDeleteBtn');
 
 function updateTrashBadge(){
   const count = tasks.filter(t => t.deleted).length;
@@ -496,7 +494,7 @@ function renderTrashList(){
   });
 }
 
-trashBtn.addEventListener('click', () => {
+sidebarDeleteBtn.addEventListener('click', () => {
   renderTrashList();
   trashModal.classList.remove('hidden');
 });
@@ -1187,7 +1185,7 @@ measureResetBtn.addEventListener('click', e => {
 const SHIFTS_STORAGE_KEY = 'shifts-list';
 let shifts = [];
 
-const reportBtn = document.getElementById('reportBtn');
+const sidebarReportBtn = document.getElementById('sidebarReportBtn');
 const reportModal = document.getElementById('reportModal');
 const reportModalClose = document.getElementById('reportModalClose');
 const reportSummary = document.getElementById('reportSummary');
@@ -1271,7 +1269,7 @@ addShiftBtn.addEventListener('click', async () => {
   shiftToInput.value = '';
 });
 
-reportBtn.addEventListener('click', async () => {
+sidebarReportBtn.addEventListener('click', async () => {
   renderReportSummary();
   shifts = await loadShifts();
   renderShiftList();
@@ -1292,68 +1290,43 @@ document.addEventListener('keydown', e => {
 const ROLE_STORAGE_KEY = 'user-role';
 let userRole = 'super';
 
-const roleLockedBtn = document.getElementById('roleLockedBtn');
-const roleOptions = document.getElementById('roleOptions');
-const roleSuperBtn = document.getElementById('roleSuperBtn');
-const roleUserBtn = document.getElementById('roleUserBtn');
+const roleSwitchTrack = document.getElementById('roleSwitchTrack');
+const roleSwitchLabelUser = document.getElementById('roleSwitchLabelUser');
+const roleSwitchLabelAdmin = document.getElementById('roleSwitchLabelAdmin');
 
 function isSuperUser(){
   return userRole === 'super';
 }
 
-function roleLabel(role){
-  return role === 'super' ? 'Admin' : 'User';
-}
-
 function updateRoleButtons(){
-  roleLockedBtn.innerHTML = `${roleLabel(userRole)} <span class="role-caret">&#9662;</span>`;
-  roleSuperBtn.classList.toggle('active', userRole === 'super');
-  roleUserBtn.classList.toggle('active', userRole === 'user');
+  const admin = isSuperUser();
+  roleSwitchTrack.classList.toggle('is-admin', admin);
+  roleSwitchTrack.setAttribute('aria-checked', String(admin));
+  roleSwitchLabelUser.classList.toggle('active', !admin);
+  roleSwitchLabelAdmin.classList.toggle('active', admin);
+  sidebarAddTaskBtn.classList.toggle('hidden', !admin);
 }
 
-function closeRoleOptions(){
-  roleOptions.classList.add('hidden');
-}
-
-roleLockedBtn.addEventListener('click', e => {
-  e.stopPropagation();
-  roleOptions.classList.toggle('hidden');
+roleSwitchTrack.addEventListener('click', () => {
+  setUserRole(isSuperUser() ? 'user' : 'super');
 });
 
-/* ---- Sidebar shortcut buttons (mirror the topbar actions) ---- */
-const sidebarAdminBtn = document.getElementById('sidebarAdminBtn');
+/* ---- Sidebar shortcut buttons ---- */
 const sidebarAddTaskBtn = document.getElementById('sidebarAddTaskBtn');
-const sidebarReportBtn = document.getElementById('sidebarReportBtn');
-const sidebarDeleteBtn = document.getElementById('sidebarDeleteBtn');
-const sidebarHideBtn = document.getElementById('sidebarHideBtn');
 const sidebarSettingBtn = document.getElementById('sidebarSettingBtn');
 const settingsModal = document.getElementById('settingsModal');
 const settingsModalClose = document.getElementById('settingsModalClose');
 
-sidebarAdminBtn.addEventListener('click', e => {
-  e.stopPropagation();
-  roleOptions.classList.toggle('hidden');
-});
 sidebarAddTaskBtn.addEventListener('click', () => openAddTaskModal());
-sidebarReportBtn.addEventListener('click', () => reportBtn.click());
-sidebarDeleteBtn.addEventListener('click', () => trashBtn.click());
-sidebarHideBtn.addEventListener('click', () => eyeBtn.click());
 sidebarSettingBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
 settingsModalClose.addEventListener('click', () => settingsModal.classList.add('hidden'));
 settingsModal.addEventListener('click', e => {
   if(e.target === settingsModal) settingsModal.classList.add('hidden');
 });
 
-document.addEventListener('click', e => {
-  if(!roleOptions.classList.contains('hidden') && !e.target.closest('#roleToggle')){
-    closeRoleOptions();
-  }
-});
-
 async function setUserRole(role){
   userRole = role;
   updateRoleButtons();
-  closeRoleOptions();
   await storageSet(ROLE_STORAGE_KEY, role);
   render();
   if(currentDetailTaskId !== null){
@@ -1361,9 +1334,6 @@ async function setUserRole(role){
     if(task) renderSubtaskSidebar(task);
   }
 }
-
-roleSuperBtn.addEventListener('click', () => setUserRole('super'));
-roleUserBtn.addEventListener('click', () => setUserRole('user'));
 
 async function init(){
   const state = await loadState();
