@@ -164,8 +164,9 @@
   .board-sidebar{
     width:230px;
     flex-shrink:0;
-    background:var(--bg);
-    border-right:3px solid var(--blue);
+    background:var(--blue);
+    background-image:linear-gradient(180deg,var(--blue),var(--blue-dark));
+    border-right:3px solid var(--blue-dark);
   }
   @media (max-width:1000px){
     .board-sidebar{width:170px;}
