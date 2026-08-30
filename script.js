@@ -6,10 +6,10 @@ const hasArtifactStorage = typeof window.storage !== 'undefined'
   && typeof window.storage.get === 'function'
   && typeof window.storage.set === 'function';
 
-async function storageGet(key){
+async function storageGet(key, shared){
   if(hasArtifactStorage){
     try{
-      const result = await window.storage.get(key, false);
+      const result = await window.storage.get(key, !!shared);
       return result ? result.value : null;
     }catch(e){
       return null;
@@ -22,10 +22,10 @@ async function storageGet(key){
   }
 }
 
-async function storageSet(key, value){
+async function storageSet(key, value, shared){
   if(hasArtifactStorage){
     try{
-      await window.storage.set(key, value, false);
+      await window.storage.set(key, value, !!shared);
       return;
     }catch(e){
       console.error('window.storage save failed, falling back to localStorage', e);
@@ -65,7 +65,7 @@ function defaultTasks(){
 
 async function loadState(){
   try{
-    const raw = await storageGet(STORAGE_KEY);
+    const raw = await storageGet(STORAGE_KEY, true);
     if(!raw) return { tasks: defaultTasks(), nextId: 11 };
     const parsed = JSON.parse(raw);
     if(!Array.isArray(parsed.tasks) || typeof parsed.nextId !== 'number'){
@@ -78,7 +78,7 @@ async function loadState(){
 }
 
 async function saveState(){
-  await storageSet(STORAGE_KEY, JSON.stringify({ tasks, nextId }));
+  await storageSet(STORAGE_KEY, JSON.stringify({ tasks, nextId }), true);
 }
 
 let tasks = [];
@@ -90,6 +90,15 @@ function remainingSeconds(task){
 }
 
 function getQueueDisplay(task, columnTasks){
+  const isCompleted = task.col === 'green';
+
+  if(isCompleted){
+    if(task.frozenRemaining == null){
+      task.frozenRemaining = remainingSeconds(task);
+    }
+    return { seconds: task.frozenRemaining, paused: false };
+  }
+
   const isCheckout = task.col === 'mint';
 
   if(!isCheckout){
@@ -131,7 +140,7 @@ function render(){
   board.innerHTML = '';
 
   COLUMNS.forEach(colDef => {
-    const colTasks = tasks.filter(t => t.col === colDef.id && !t.hidden);
+    const colTasks = tasks.filter(t => t.col === colDef.id && !t.hidden && !t.deleted);
     if(colDef.id !== 'mint'){
       colTasks.sort((a, b) => remainingSeconds(a) - remainingSeconds(b));
     }
@@ -158,6 +167,7 @@ function render(){
       const task = tasks.find(t => t.id === id);
       if(task){
         task.col = colDef.id;
+        if(colDef.id !== 'green') task.frozenRemaining = null;
         if(colDef.id === 'red'){
           task.owner = 'Assigned to me';
           task.me = true;
@@ -235,7 +245,7 @@ function render(){
       col.appendChild(hint);
     }
 
-    if(colDef.id === 'red'){
+    if(colDef.id === 'red' && isSuperUser()){
       const trigger = document.createElement('button');
       trigger.className = 'add-trigger-btn';
       trigger.textContent = '+ Add task';
@@ -277,6 +287,7 @@ function render(){
       task.owner = 'Assigned';
       task.me = true;
       task.col = 'amber';
+      task.frozenRemaining = null;
       saveState();
       render();
     });
@@ -298,7 +309,8 @@ function render(){
 function tick(){
   if(isDragging) return;
   if(currentDetailTaskId !== null){
-    updateDetailTimerPill();
+    updateMeasureTimerDisplay();
+    updateAllSubtaskTimerDisplays();
     return;
   }
   render();
@@ -325,9 +337,11 @@ confirmModalCancel.addEventListener('click', closeConfirmModal);
 
 confirmModalConfirm.addEventListener('click', () => {
   if(pendingDeleteId !== null){
-    tasks = tasks.filter(t => t.id !== pendingDeleteId);
+    const task = tasks.find(t => t.id === pendingDeleteId);
+    if(task) task.deleted = true;
     saveState();
     render();
+    updateTrashBadge();
   }
   closeConfirmModal();
 });
@@ -400,6 +414,20 @@ eyeBtn.addEventListener('click', () => {
   hiddenModal.classList.remove('hidden');
 });
 
+const homeBtn = document.getElementById('homeBtn');
+const brandLogo = document.getElementById('brandLogo');
+function goToBoard(){
+  if(currentDetailTaskId !== null){
+    closeDetailView();
+  } else {
+    board.classList.remove('hidden');
+    detailView.classList.add('hidden');
+    render();
+  }
+}
+homeBtn.addEventListener('click', goToBoard);
+brandLogo.addEventListener('click', goToBoard);
+
 document.getElementById('hiddenModalClose').addEventListener('click', () => {
   hiddenModal.classList.add('hidden');
 });
@@ -408,6 +436,78 @@ hiddenModal.addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && !hiddenModal.classList.contains('hidden')) hiddenModal.classList.add('hidden');
+});
+
+/* ---- Trash (deleted tasks) ---- */
+
+const trashModal = document.getElementById('trashModal');
+const trashList = document.getElementById('trashList');
+const trashBadgeCount = document.getElementById('trashBadgeCount');
+const trashBtn = document.getElementById('trashBtn');
+
+function updateTrashBadge(){
+  const count = tasks.filter(t => t.deleted).length;
+  trashBadgeCount.textContent = count;
+  trashBadgeCount.classList.toggle('hidden', count === 0);
+}
+
+function renderTrashList(){
+  const deletedTasks = tasks.filter(t => t.deleted);
+  if(deletedTasks.length === 0){
+    trashList.innerHTML = `<div class="empty-hint" style="padding:20px 0;">Trash is empty</div>`;
+    return;
+  }
+  trashList.innerHTML = deletedTasks.map(t => `
+    <div class="hidden-item">
+      <div>
+        <div class="hidden-item-title">${t.title}</div>
+        <div class="hidden-item-col">${colLabelById[t.col] || t.col}</div>
+      </div>
+      <div class="hidden-item-actions">
+        <button class="restore-btn" data-trash-restore="${t.id}">Restore</button>
+        <button class="delete-forever-btn" data-trash-delete="${t.id}">Delete forever</button>
+      </div>
+    </div>
+  `).join('');
+
+  trashList.querySelectorAll('[data-trash-restore]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const id = parseInt(e.currentTarget.dataset.trashRestore, 10);
+      const task = tasks.find(t => t.id === id);
+      if(!task) return;
+      task.deleted = false;
+      saveState();
+      render();
+      updateTrashBadge();
+      renderTrashList();
+    });
+  });
+
+  trashList.querySelectorAll('[data-trash-delete]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const id = parseInt(e.currentTarget.dataset.trashDelete, 10);
+      tasks = tasks.filter(t => t.id !== id);
+      saveState();
+      render();
+      updateTrashBadge();
+      renderTrashList();
+    });
+  });
+}
+
+trashBtn.addEventListener('click', () => {
+  renderTrashList();
+  trashModal.classList.remove('hidden');
+});
+
+document.getElementById('trashModalClose').addEventListener('click', () => {
+  trashModal.classList.add('hidden');
+});
+trashModal.addEventListener('click', e => {
+  if(e.target === trashModal) trashModal.classList.add('hidden');
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !trashModal.classList.contains('hidden')) trashModal.classList.add('hidden');
 });
 
 const addTaskModal = document.getElementById('addTaskModal');
@@ -495,19 +595,44 @@ let currentTool = 'line';
 const canvasHistoryByTask = {}; // { [taskId]: { undo: [...], redo: [...] } }
 
 const detailView = document.getElementById('detailView');
-const detailBackBtn = document.getElementById('detailBackBtn');
 const detailTaskName = document.getElementById('detailTaskName');
 const detailTaskId = document.getElementById('detailTaskId');
-const detailTimerPill = document.getElementById('detailTimerPill');
 const subtaskSidebar = document.getElementById('subtaskSidebar');
 const detailRightPanel = document.getElementById('detailRightPanel');
 const panelToggleIcon = document.getElementById('panelToggleIcon');
 const taskCanvas = document.getElementById('taskCanvas');
 const canvasCtx = taskCanvas.getContext('2d');
 
+function defaultSubtaskGroups(taskId){
+  // Task id 7 -> groups 71, 72, 73 with subtasks 71.1, 72.2, 73.3
+  const groups = [];
+  for(let n = 1; n <= 3; n++){
+    const groupId = `${taskId}${n}`;
+    const subtaskId = `${groupId}.${n}`;
+    groups.push({
+      id: groupId,
+      name: `Subtask ${groupId}`,
+      subtasks: [
+        { id: subtaskId, title: `Subtask ${subtaskId}` }
+      ]
+    });
+  }
+  return groups;
+}
+
 function ensureTaskDetailDefaults(task){
-  if(!Array.isArray(task.subtaskGroups)) task.subtaskGroups = [];
+  if(!Array.isArray(task.subtaskGroups) || task.subtaskGroups.length === 0){
+    task.subtaskGroups = defaultSubtaskGroups(task.id);
+  }
   if(!Array.isArray(task.canvasShapes)) task.canvasShapes = [];
+  if(!task.measureTimer){
+    task.measureTimer = { elapsedMs: 0, running: false, startedAt: null };
+  }
+}
+
+function isTaskAssigned(task){
+  // A task still sitting in the Backlog column has not been assigned yet.
+  return task.col !== 'red';
 }
 
 function getCurrentTask(){
@@ -517,7 +642,10 @@ function getCurrentTask(){
 function openDetailView(taskId){
   const task = tasks.find(t => t.id === taskId);
   if(!task) return;
+  const isFirstOpen = !Array.isArray(task.subtaskGroups) || task.subtaskGroups.length === 0;
   ensureTaskDetailDefaults(task);
+  if(isFirstOpen) saveState();
+
   currentDetailTaskId = taskId;
   currentTool = 'line';
   if(!canvasHistoryByTask[taskId]) canvasHistoryByTask[taskId] = { undo: [], redo: [] };
@@ -532,6 +660,8 @@ function openDetailView(taskId){
   setActiveTool('line');
   resizeCanvasToContainer();
   redrawCanvas();
+  updateMeasureTimerDisplay();
+  updateMeasureButtonsState();
 }
 
 function closeDetailView(){
@@ -540,8 +670,6 @@ function closeDetailView(){
   board.classList.remove('hidden');
   render();
 }
-
-detailBackBtn.addEventListener('click', closeDetailView);
 
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && !detailView.classList.contains('hidden')) closeDetailView();
@@ -552,16 +680,38 @@ detailRightPanel.addEventListener('click', () => {
   panelToggleIcon.innerHTML = expanded ? '&#9665; Notes panel (empty)' : '&#9655;';
 });
 
-function updateDetailTimerPill(){
-  const task = getCurrentTask();
-  if(!task) return;
-  detailTimerPill.textContent = fmt(remainingSeconds(task));
-}
-
 /* ---- Subtask sidebar ---- */
 
 let pendingAddGroupTarget = null;
 let pendingAddSubtaskGroupId = null;
+
+function ensureSubtaskTimer(sub){
+  if(!sub.timer) sub.timer = { elapsedMs: 0, running: false, startedAt: null };
+}
+
+function getSubtaskElapsedMs(sub){
+  ensureSubtaskTimer(sub);
+  const t = sub.timer;
+  return t.running ? (t.elapsedMs + (Date.now() - t.startedAt)) : t.elapsedMs;
+}
+
+function findSubtask(task, groupId, subId){
+  const group = task.subtaskGroups.find(g => String(g.id) === groupId);
+  if(!group) return null;
+  const sub = group.subtasks.find(s => String(s.id) === subId);
+  return sub ? { group, sub } : null;
+}
+
+function updateAllSubtaskTimerDisplays(){
+  const task = getCurrentTask();
+  if(!task) return;
+  subtaskSidebar.querySelectorAll('[data-sub-timer]').forEach(el => {
+    const [groupId, subId] = el.dataset.subTimer.split(':');
+    const found = findSubtask(task, groupId, subId);
+    if(!found) return;
+    el.textContent = fmt(getSubtaskElapsedMs(found.sub) / 1000);
+  });
+}
 
 function renderSubtaskSidebar(task){
   subtaskSidebar.innerHTML = '';
@@ -575,35 +725,41 @@ function renderSubtaskSidebar(task){
     groupEl.appendChild(header);
 
     group.subtasks.forEach(sub => {
+      ensureSubtaskTimer(sub);
+      const running = sub.timer.running;
       const card = document.createElement('div');
       card.className = 'subtask-card';
       card.innerHTML = `
         <div class="subtask-card-top">${escapeHtml(sub.title)}</div>
         <div class="subtask-card-bottom">
-          <span class="subtask-icon">&#10073;&#10073;</span>
-          <span class="subtask-icon">&#9724;</span>
-          <span class="subtask-icon">&#9679;</span>
-          <span class="subtask-timer-pill">00:00:00</span>
+          <button class="subtask-icon" title="Pause" data-sub-pause="${group.id}:${sub.id}" ${running ? '' : 'disabled'}>&#10073;&#10073;</button>
+          <button class="subtask-icon" title="Reset" data-sub-reset="${group.id}:${sub.id}">&#9724;</button>
+          <button class="subtask-icon" title="Play" data-sub-play="${group.id}:${sub.id}" ${running ? 'disabled' : ''}>&#9679;</button>
+          <span class="subtask-timer-pill" data-sub-timer="${group.id}:${sub.id}">${fmt(getSubtaskElapsedMs(sub)/1000)}</span>
           <button class="subtask-remove" title="Remove subtask" data-remove-subtask="${group.id}:${sub.id}">&times;</button>
         </div>
       `;
       groupEl.appendChild(card);
     });
 
-    const addSubBtn = document.createElement('button');
-    addSubBtn.className = 'add-subtask-btn';
-    addSubBtn.textContent = '+ Add subtask';
-    addSubBtn.addEventListener('click', () => openAddSubtaskModal(group.id));
-    groupEl.appendChild(addSubBtn);
+    if(isSuperUser()){
+      const addSubBtn = document.createElement('button');
+      addSubBtn.className = 'add-subtask-btn';
+      addSubBtn.textContent = '+ Add subtask';
+      addSubBtn.addEventListener('click', () => openAddSubtaskModal(group.id));
+      groupEl.appendChild(addSubBtn);
+    }
 
     subtaskSidebar.appendChild(groupEl);
   });
 
-  const addGroupBtn = document.createElement('button');
-  addGroupBtn.className = 'add-group-btn';
-  addGroupBtn.textContent = '+ Add subtask group';
-  addGroupBtn.addEventListener('click', () => openAddGroupModal());
-  subtaskSidebar.appendChild(addGroupBtn);
+  if(isSuperUser()){
+    const addGroupBtn = document.createElement('button');
+    addGroupBtn.className = 'add-group-btn';
+    addGroupBtn.textContent = '+ Add subtask group';
+    addGroupBtn.addEventListener('click', () => openAddGroupModal());
+    subtaskSidebar.appendChild(addGroupBtn);
+  }
 
   subtaskSidebar.querySelectorAll('[data-remove-subtask]').forEach(btn => {
     btn.addEventListener('click', e => {
@@ -613,6 +769,56 @@ function renderSubtaskSidebar(task){
       const group = t.subtaskGroups.find(g => String(g.id) === groupId);
       if(!group) return;
       group.subtasks = group.subtasks.filter(s => String(s.id) !== subId);
+      saveState();
+      renderSubtaskSidebar(t);
+    });
+  });
+
+  subtaskSidebar.querySelectorAll('[data-sub-play]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const [groupId, subId] = e.currentTarget.dataset.subPlay.split(':');
+      const t = getCurrentTask();
+      if(!t) return;
+      const found = findSubtask(t, groupId, subId);
+      if(!found) return;
+      ensureSubtaskTimer(found.sub);
+      if(found.sub.timer.running) return;
+      found.sub.timer.running = true;
+      found.sub.timer.startedAt = Date.now();
+      saveState();
+      renderSubtaskSidebar(t);
+    });
+  });
+
+  subtaskSidebar.querySelectorAll('[data-sub-pause]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const [groupId, subId] = e.currentTarget.dataset.subPause.split(':');
+      const t = getCurrentTask();
+      if(!t) return;
+      const found = findSubtask(t, groupId, subId);
+      if(!found) return;
+      ensureSubtaskTimer(found.sub);
+      if(!found.sub.timer.running) return;
+      found.sub.timer.elapsedMs += Date.now() - found.sub.timer.startedAt;
+      found.sub.timer.running = false;
+      found.sub.timer.startedAt = null;
+      saveState();
+      renderSubtaskSidebar(t);
+    });
+  });
+
+  subtaskSidebar.querySelectorAll('[data-sub-reset]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if(!requireSuperUser('Only Super User can reset the timer.')) return;
+      const [groupId, subId] = e.currentTarget.dataset.subReset.split(':');
+      const t = getCurrentTask();
+      if(!t) return;
+      const found = findSubtask(t, groupId, subId);
+      if(!found) return;
+      found.sub.timer = { elapsedMs: 0, running: false, startedAt: null };
       saveState();
       renderSubtaskSidebar(t);
     });
@@ -788,6 +994,10 @@ taskCanvas.addEventListener('mousedown', e => {
   const y = e.clientY - rect.top;
 
   if(currentTool === 'line'){
+    if(!isTaskAssigned(task)){
+      showAssignRequiredPopup();
+      return;
+    }
     drawStart = { x, y };
   } else if(currentTool === 'delete'){
     const hitIndex = task.canvasShapes.findIndex(s => distanceToSegment(x, y, s.x1, s.y1, s.x2, s.y2) < 6);
@@ -848,10 +1058,297 @@ document.getElementById('toolRedo').addEventListener('click', () => {
   redrawCanvas();
 });
 
+/* ---- Assign-required popup ---- */
+
+const assignRequiredModal = document.getElementById('assignRequiredModal');
+
+function showAssignRequiredPopup(){
+  assignRequiredModal.classList.remove('hidden');
+}
+function closeAssignRequiredPopup(){
+  assignRequiredModal.classList.add('hidden');
+}
+document.getElementById('assignRequiredOk').addEventListener('click', closeAssignRequiredPopup);
+assignRequiredModal.addEventListener('click', e => {
+  if(e.target === assignRequiredModal) closeAssignRequiredPopup();
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !assignRequiredModal.classList.contains('hidden')) closeAssignRequiredPopup();
+});
+
+/* ---- Permission notice popup (Super User only actions) ---- */
+
+const permissionNoticeModal = document.getElementById('permissionNoticeModal');
+const permissionNoticeBody = document.getElementById('permissionNoticeBody');
+
+function showPermissionNotice(message){
+  permissionNoticeBody.textContent = message || 'Only Super User can do this.';
+  permissionNoticeModal.classList.remove('hidden');
+}
+function closePermissionNotice(){
+  permissionNoticeModal.classList.add('hidden');
+}
+document.getElementById('permissionNoticeOk').addEventListener('click', closePermissionNotice);
+permissionNoticeModal.addEventListener('click', e => {
+  if(e.target === permissionNoticeModal) closePermissionNotice();
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !permissionNoticeModal.classList.contains('hidden')) closePermissionNotice();
+});
+
+function requireSuperUser(message){
+  if(isSuperUser()) return true;
+  showPermissionNotice(message);
+  return false;
+}
+
+/* ---- Task-page measuring timer (independent stopwatch, counts up) ---- */
+
+const measureTimerDisplay = document.getElementById('measureTimerDisplay');
+const measureStartBtn = document.getElementById('measureStartBtn');
+const measurePauseBtn = document.getElementById('measurePauseBtn');
+const measureStopBtn = document.getElementById('measureStopBtn');
+const measureResetBtn = document.getElementById('measureResetBtn');
+
+function getMeasureElapsedMs(task){
+  const mt = task.measureTimer;
+  if(!mt) return 0;
+  return mt.running ? (mt.elapsedMs + (Date.now() - mt.startedAt)) : mt.elapsedMs;
+}
+
+function updateMeasureTimerDisplay(){
+  const task = getCurrentTask();
+  if(!task || !task.measureTimer){
+    measureTimerDisplay.textContent = '00:00:00';
+    return;
+  }
+  measureTimerDisplay.textContent = fmt(getMeasureElapsedMs(task) / 1000);
+}
+
+function updateMeasureButtonsState(){
+  const task = getCurrentTask();
+  const running = !!(task && task.measureTimer && task.measureTimer.running);
+  measureStartBtn.disabled = running;
+  measurePauseBtn.disabled = !running;
+  measureStopBtn.disabled = !running;
+}
+
+measureStartBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  const task = getCurrentTask();
+  if(!task) return;
+  if(!task.measureTimer) task.measureTimer = { elapsedMs: 0, running: false, startedAt: null };
+  if(task.measureTimer.running) return;
+  task.measureTimer.running = true;
+  task.measureTimer.startedAt = Date.now();
+  saveState();
+  updateMeasureTimerDisplay();
+  updateMeasureButtonsState();
+});
+
+function pauseMeasureTimer(task){
+  if(!task.measureTimer || !task.measureTimer.running) return;
+  task.measureTimer.elapsedMs += Date.now() - task.measureTimer.startedAt;
+  task.measureTimer.running = false;
+  task.measureTimer.startedAt = null;
+  saveState();
+  updateMeasureTimerDisplay();
+  updateMeasureButtonsState();
+}
+
+measurePauseBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  const task = getCurrentTask();
+  if(!task) return;
+  pauseMeasureTimer(task);
+});
+
+measureStopBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  const task = getCurrentTask();
+  if(!task) return;
+  pauseMeasureTimer(task);
+});
+
+measureResetBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if(!requireSuperUser('Only Super User can reset the timer.')) return;
+  const task = getCurrentTask();
+  if(!task) return;
+  task.measureTimer = { elapsedMs: 0, running: false, startedAt: null };
+  saveState();
+  updateMeasureTimerDisplay();
+  updateMeasureButtonsState();
+});
+
+/* ---- Report modal (summary + shifts) ---- */
+
+const SHIFTS_STORAGE_KEY = 'shifts-list';
+let shifts = [];
+
+const reportBtn = document.getElementById('reportBtn');
+const reportModal = document.getElementById('reportModal');
+const reportModalClose = document.getElementById('reportModalClose');
+const reportSummary = document.getElementById('reportSummary');
+const shiftFromInput = document.getElementById('shiftFromInput');
+const shiftToInput = document.getElementById('shiftToInput');
+const shiftError = document.getElementById('shiftError');
+const addShiftBtn = document.getElementById('addShiftBtn');
+const shiftList = document.getElementById('shiftList');
+
+function formatTime12h(hhmm){
+  const [h, m] = hhmm.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+}
+
+function renderReportSummary(){
+  const visibleTasks = tasks.filter(t => !t.hidden && !t.deleted);
+  const rows = COLUMNS.map(c => {
+    const count = visibleTasks.filter(t => t.col === c.id).length;
+    return `<div class="report-summary-row"><span>${c.label}</span><strong>${count}</strong></div>`;
+  }).join('');
+  reportSummary.innerHTML = `
+    <div class="report-summary-total"><span>Total tasks</span><span>${visibleTasks.length}</span></div>
+    ${rows}
+  `;
+}
+
+async function loadShifts(){
+  try{
+    const raw = await storageGet(SHIFTS_STORAGE_KEY, true);
+    if(!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  }catch(e){
+    return [];
+  }
+}
+
+async function saveShifts(){
+  await storageSet(SHIFTS_STORAGE_KEY, JSON.stringify(shifts), true);
+}
+
+function renderShiftList(){
+  if(shifts.length === 0){
+    shiftList.innerHTML = `<div class="empty-hint" style="padding:12px 0;">No shifts added yet</div>`;
+    return;
+  }
+  shiftList.innerHTML = shifts.map(shift => `
+    <div class="shift-item">
+      <span class="shift-item-range">${formatTime12h(shift.from)} &ndash; ${formatTime12h(shift.to)}</span>
+      <button class="shift-item-remove" title="Remove shift" data-remove-shift="${shift.id}">&times;</button>
+    </div>
+  `).join('');
+
+  shiftList.querySelectorAll('[data-remove-shift]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      const id = e.currentTarget.dataset.removeShift;
+      shifts = shifts.filter(s => String(s.id) !== id);
+      await saveShifts();
+      renderShiftList();
+    });
+  });
+}
+
+addShiftBtn.addEventListener('click', async () => {
+  shiftError.classList.remove('show');
+  const from = shiftFromInput.value;
+  const to = shiftToInput.value;
+
+  if(!from || !to){
+    shiftError.textContent = 'Please choose both a From and To time.';
+    shiftError.classList.add('show');
+    return;
+  }
+
+  shifts.push({ id: 'shift' + Date.now(), from, to });
+  await saveShifts();
+  renderShiftList();
+  shiftFromInput.value = '';
+  shiftToInput.value = '';
+});
+
+reportBtn.addEventListener('click', async () => {
+  renderReportSummary();
+  shifts = await loadShifts();
+  renderShiftList();
+  shiftError.classList.remove('show');
+  reportModal.classList.remove('hidden');
+});
+
+reportModalClose.addEventListener('click', () => {
+  reportModal.classList.add('hidden');
+});
+reportModal.addEventListener('click', e => {
+  if(e.target === reportModal) reportModal.classList.add('hidden');
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !reportModal.classList.contains('hidden')) reportModal.classList.add('hidden');
+});
+
+const ROLE_STORAGE_KEY = 'user-role';
+let userRole = 'super';
+
+const roleLockedBtn = document.getElementById('roleLockedBtn');
+const roleOptions = document.getElementById('roleOptions');
+const roleSuperBtn = document.getElementById('roleSuperBtn');
+const roleUserBtn = document.getElementById('roleUserBtn');
+
+function isSuperUser(){
+  return userRole === 'super';
+}
+
+function roleLabel(role){
+  return role === 'super' ? 'Super User' : 'User';
+}
+
+function updateRoleButtons(){
+  roleLockedBtn.innerHTML = `${roleLabel(userRole)} <span class="role-caret">&#9662;</span>`;
+  roleSuperBtn.classList.toggle('active', userRole === 'super');
+  roleUserBtn.classList.toggle('active', userRole === 'user');
+}
+
+function closeRoleOptions(){
+  roleOptions.classList.add('hidden');
+}
+
+roleLockedBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  roleOptions.classList.toggle('hidden');
+});
+
+document.addEventListener('click', e => {
+  if(!roleOptions.classList.contains('hidden') && !e.target.closest('#roleToggle')){
+    closeRoleOptions();
+  }
+});
+
+async function setUserRole(role){
+  userRole = role;
+  updateRoleButtons();
+  closeRoleOptions();
+  await storageSet(ROLE_STORAGE_KEY, role);
+  render();
+  if(currentDetailTaskId !== null){
+    const task = getCurrentTask();
+    if(task) renderSubtaskSidebar(task);
+  }
+}
+
+roleSuperBtn.addEventListener('click', () => setUserRole('super'));
+roleUserBtn.addEventListener('click', () => setUserRole('user'));
+
 async function init(){
   const state = await loadState();
   tasks = state.tasks;
   nextId = state.nextId;
+
+  const savedRole = await storageGet(ROLE_STORAGE_KEY);
+  userRole = (savedRole === 'user' || savedRole === 'super') ? savedRole : 'super';
+  updateRoleButtons();
+
   render();
   setInterval(tick, 1000);
 
@@ -859,6 +1356,7 @@ async function init(){
   setInterval(updateIstClock, 1000);
 
   updateHiddenBadge();
+  updateTrashBadge();
 }
 
 init();

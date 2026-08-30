@@ -11,8 +11,15 @@
 <body>
 
 <div class="topbar">
-    <div class="brand"><span class=""></span>TASK MANAGER</div>
+    <div class="brand" id="brandLogo" title="Go to board"><span class=""></span>TASK MANAGER</div>
     <div class="icon-bar">
+      <div class="role-toggle" id="roleToggle">
+        <button class="role-locked-btn" id="roleLockedBtn">Super User</button>
+        <div class="role-options hidden" id="roleOptions">
+          <button class="role-btn" id="roleSuperBtn" data-role="super">Super User</button>
+          <button class="role-btn" id="roleUserBtn" data-role="user">User</button>
+        </div>
+      </div>
       <button class="icon-btn" id="homeBtn" title="Home">
          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:21px; height:21px;">
     <path d="M3 11l9-8 9 8"/>
@@ -34,6 +41,10 @@
       <button class="icon-btn" id="settingsBtn" title="Settings">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
+      <button class="icon-btn" id="trashBtn" title="Deleted tasks">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        <span class="badge-count hidden" id="trashBadgeCount">0</span>
+      </button>
     </div>
   </div>
 </div>
@@ -44,7 +55,6 @@
 
 <div class="detail-view hidden" id="detailView">
   <div class="detail-subheader">
-    <button class="detail-back" id="detailBackBtn">&larr; Back to board</button>
     <span class="detail-field-label">Task name :</span>
     <span class="detail-field-value" id="detailTaskName">&nbsp;</span>
     <span class="detail-field-label">Task ID :</span>
@@ -54,8 +64,16 @@
       <span class="sdot outline sicon">&#10073;&#10073;</span>
       <span class="sdot filled-black" style="background:transparent; color:var(--red);"><span class="sicon">&#9724;</span></span>
       <span class="sdot filled-black"></span>
-      <span class="status-timer-pill" id="detailTimerPill">00:00:00</span>
     </div>
+  </div>
+
+  <div class="measure-toolbar">
+    <span class="measure-label">Task timer:</span>
+    <span class="measure-timer-display" id="measureTimerDisplay">00:00:00</span>
+    <button class="measure-btn" id="measureStartBtn">Start</button>
+    <button class="measure-btn" id="measurePauseBtn" disabled>Pause</button>
+    <button class="measure-btn" id="measureStopBtn" disabled>Stop</button>
+    <button class="measure-btn" id="measureResetBtn">Reset</button>
   </div>
 
   <div class="detail-body">
@@ -149,13 +167,70 @@
   </div>
 </div>
 
+<div class="modal-overlay hidden" id="trashModal">
+  <div class="modal-box">
+    <p class="modal-title">Deleted tasks</p>
+    <div class="hidden-list" id="trashList"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="trashModalClose">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="confirmModal">
   <div class="modal-box">
     <p class="modal-title">Delete card</p>
-    <p class="modal-body">Do you want to delete <strong id="confirmModalTitle"></strong>? This can't be undone.</p>
+    <p class="modal-body">Do you want to delete <strong id="confirmModalTitle"></strong>? It will be moved to the trash.</p>
     <div class="modal-actions">
       <button class="modal-cancel" id="confirmModalCancel">Cancel</button>
       <button class="modal-confirm" id="confirmModalConfirm">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="assignRequiredModal">
+  <div class="modal-box">
+    <p class="modal-title">Task not assigned</p>
+    <p class="modal-body">Please assign this task before drawing on the canvas.</p>
+    <div class="modal-actions">
+      <button class="modal-confirm" id="assignRequiredOk" style="background:var(--blue);">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="reportModal">
+  <div class="modal-box modal-box-lg">
+    <p class="modal-title">Board report</p>
+    <div class="modal-scroll-body">
+      <div id="reportSummary"></div>
+
+      <p class="report-section-title">Shifts</p>
+      <div class="shift-add-row">
+        <div class="shift-field">
+          <label for="shiftFromInput">From</label>
+          <input type="time" id="shiftFromInput" />
+        </div>
+        <div class="shift-field">
+          <label for="shiftToInput">To</label>
+          <input type="time" id="shiftToInput" />
+        </div>
+        <button class="add-shift-btn" id="addShiftBtn">+ Add Shift</button>
+      </div>
+      <p class="shift-error" id="shiftError"></p>
+      <div class="shift-list" id="shiftList"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="reportModalClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="permissionNoticeModal">
+  <div class="modal-box">
+    <p class="modal-title">Permission required</p>
+    <p class="modal-body" id="permissionNoticeBody">Only Super User can do this.</p>
+    <div class="modal-actions">
+      <button class="modal-confirm" id="permissionNoticeOk" style="background:var(--blue);">OK</button>
     </div>
   </div>
 </div>
