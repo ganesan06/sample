@@ -135,6 +135,7 @@ function fmt(s){
 }
 
 const board = document.getElementById('board');
+const boardLayout = document.getElementById('boardLayout');
 
 function render(){
   board.innerHTML = '';
@@ -420,7 +421,7 @@ function goToBoard(){
   if(currentDetailTaskId !== null){
     closeDetailView();
   } else {
-    board.classList.remove('hidden');
+    boardLayout.classList.remove('hidden');
     detailView.classList.add('hidden');
     render();
   }
@@ -653,7 +654,7 @@ function openDetailView(taskId){
   detailTaskName.textContent = task.title;
   detailTaskId.textContent = task.id;
 
-  board.classList.add('hidden');
+  boardLayout.classList.add('hidden');
   detailView.classList.remove('hidden');
 
   renderSubtaskSidebar(task);
@@ -667,7 +668,7 @@ function openDetailView(taskId){
 function closeDetailView(){
   currentDetailTaskId = null;
   detailView.classList.add('hidden');
-  board.classList.remove('hidden');
+  boardLayout.classList.remove('hidden');
   render();
 }
 

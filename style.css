@@ -156,7 +156,27 @@
     text-transform:uppercase;
   }
 
+  .board-layout{
+    display:flex;
+    align-items:stretch;
+    min-height:calc(100vh - 58px);
+  }
+  .board-sidebar{
+    width:230px;
+    flex-shrink:0;
+    background:var(--bg);
+    border-right:3px solid var(--blue);
+  }
+  @media (max-width:1000px){
+    .board-sidebar{width:170px;}
+  }
+  @media (max-width:640px){
+    .board-sidebar{display:none;}
+  }
+
   .board{
+    flex:1;
+    min-width:0;
     display:grid;
     grid-template-columns:repeat(4,minmax(240px,1fr));
     gap:22px;
