@@ -50,7 +50,15 @@
 </div>
 
 <div class="board-layout" id="boardLayout">
-  <aside class="board-sidebar" id="boardSidebar"></aside>
+  <aside class="board-sidebar" id="boardSidebar">
+    <button class="sidebar-btn" id="sidebarAdminBtn">Admin</button>
+    <button class="sidebar-btn" id="sidebarAddTaskBtn">Add task</button>
+    <button class="sidebar-btn" id="sidebarReportBtn">Report</button>
+    <button class="sidebar-btn" id="sidebarDeleteBtn">Delete</button>
+    <button class="sidebar-btn" id="sidebarHideBtn">Hide</button>
+    <div class="sidebar-spacer"></div>
+    <button class="sidebar-btn" id="sidebarSettingBtn">Setting</button>
+  </aside>
   <div class="board" id="board">
     <div class="empty-hint" style="grid-column: 1 / -1; padding: 40px 0;">Loading board…</div>
   </div>
@@ -234,6 +242,16 @@
     <p class="modal-body" id="permissionNoticeBody">Only Admin can do this.</p>
     <div class="modal-actions">
       <button class="modal-confirm" id="permissionNoticeOk" style="background:var(--blue);">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="settingsModal">
+  <div class="modal-box">
+    <p class="modal-title">Settings</p>
+    <p class="modal-body">Settings panel coming soon.</p>
+    <div class="modal-actions">
+      <button class="modal-cancel" id="settingsModalClose">Close</button>
     </div>
   </div>
 </div>

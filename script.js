@@ -1320,6 +1320,30 @@ roleLockedBtn.addEventListener('click', e => {
   roleOptions.classList.toggle('hidden');
 });
 
+/* ---- Sidebar shortcut buttons (mirror the topbar actions) ---- */
+const sidebarAdminBtn = document.getElementById('sidebarAdminBtn');
+const sidebarAddTaskBtn = document.getElementById('sidebarAddTaskBtn');
+const sidebarReportBtn = document.getElementById('sidebarReportBtn');
+const sidebarDeleteBtn = document.getElementById('sidebarDeleteBtn');
+const sidebarHideBtn = document.getElementById('sidebarHideBtn');
+const sidebarSettingBtn = document.getElementById('sidebarSettingBtn');
+const settingsModal = document.getElementById('settingsModal');
+const settingsModalClose = document.getElementById('settingsModalClose');
+
+sidebarAdminBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  roleOptions.classList.toggle('hidden');
+});
+sidebarAddTaskBtn.addEventListener('click', () => openAddTaskModal());
+sidebarReportBtn.addEventListener('click', () => reportBtn.click());
+sidebarDeleteBtn.addEventListener('click', () => trashBtn.click());
+sidebarHideBtn.addEventListener('click', () => eyeBtn.click());
+sidebarSettingBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
+settingsModalClose.addEventListener('click', () => settingsModal.classList.add('hidden'));
+settingsModal.addEventListener('click', e => {
+  if(e.target === settingsModal) settingsModal.classList.add('hidden');
+});
+
 document.addEventListener('click', e => {
   if(!roleOptions.classList.contains('hidden') && !e.target.closest('#roleToggle')){
     closeRoleOptions();
