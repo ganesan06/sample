@@ -813,7 +813,7 @@ function renderSubtaskSidebar(task){
   subtaskSidebar.querySelectorAll('[data-sub-reset]').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      if(!requireSuperUser('Only Super User can reset the timer.')) return;
+      if(!requireSuperUser('Only Admin can reset the timer.')) return;
       const [groupId, subId] = e.currentTarget.dataset.subReset.split(':');
       const t = getCurrentTask();
       if(!t) return;
@@ -1077,13 +1077,13 @@ document.addEventListener('keydown', e => {
   if(e.key === 'Escape' && !assignRequiredModal.classList.contains('hidden')) closeAssignRequiredPopup();
 });
 
-/* ---- Permission notice popup (Super User only actions) ---- */
+/* ---- Permission notice popup (Admin only actions) ---- */
 
 const permissionNoticeModal = document.getElementById('permissionNoticeModal');
 const permissionNoticeBody = document.getElementById('permissionNoticeBody');
 
 function showPermissionNotice(message){
-  permissionNoticeBody.textContent = message || 'Only Super User can do this.';
+  permissionNoticeBody.textContent = message || 'Only Admin can do this.';
   permissionNoticeModal.classList.remove('hidden');
 }
 function closePermissionNotice(){
@@ -1173,7 +1173,7 @@ measureStopBtn.addEventListener('click', e => {
 
 measureResetBtn.addEventListener('click', e => {
   e.stopPropagation();
-  if(!requireSuperUser('Only Super User can reset the timer.')) return;
+  if(!requireSuperUser('Only Admin can reset the timer.')) return;
   const task = getCurrentTask();
   if(!task) return;
   task.measureTimer = { elapsedMs: 0, running: false, startedAt: null };
@@ -1302,7 +1302,7 @@ function isSuperUser(){
 }
 
 function roleLabel(role){
-  return role === 'super' ? 'Super User' : 'User';
+  return role === 'super' ? 'Admin' : 'User';
 }
 
 function updateRoleButtons(){
